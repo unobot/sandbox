@@ -1,0 +1,15 @@
+name = Eventbrite
+description = Implements the Eventbrite API for other Drupal modules in the Eventbrite package.  On its own, this module does not add any features.
+version = "6.x-2.x-dev"
+core = 6.x
+package = Eventbrite
+
+dependencies[] = countries_api
+dependencies[] = date_api
+
+; Information added by drupal.org packaging script on 2011-11-29
+version = "6.x-2.0-beta2"
+core = "6.x"
+project = "eventbrite"
+datestamp = "1322559342"
+

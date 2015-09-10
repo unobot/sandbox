@@ -1,0 +1,4 @@
+filename = sandbox_dev_clean
+description = "No modules enabled except demo and admin menu. "
+modules = block color comment dblog filter help menu node system taxonomy update user admin_menu demo
+version = 1.1

@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for Eventbrite User.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function eventbrite_subuser_schema() {
+  $schema = array();
+  
+  $schema['eventbrite_subuser'] = array(
+    'fields' => array(
+      'user_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'email' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'user_key' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'enabled_organizers' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+      'enabled_venues' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('user_id'),
+    'unique keys' => array('email' => array('email')),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function eventbrite_subuser_install() {
+  drupal_install_schema('eventbrite_subuser');
+}
+
+/**
+ * Remove variables on uninstall.
+ */
+function eventbrite_subuser_uninstall() {
+  drupal_uninstall_schema('eventbrite_subuser');
+}
+

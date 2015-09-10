@@ -1,0 +1,301 @@
+<?php
+
+/**
+ * Implementation of the hook_init()
+ */
+function eventbrite_init() {
+  drupal_add_css(drupal_get_path('module', 'eventbrite') .'/eventbrite.css');
+}
+
+/*
+ * Implementation of hook_menu().
+ */
+function eventbrite_menu() {
+
+  $items['admin/settings/eventbrite'] = array(
+    'title' => 'Eventbrite Configuration',
+    'description' => 'Configure Eventbrite settings & objects',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite.admin.inc',
+  );
+
+  $items['admin/settings/eventbrite/api'] = array(
+    'title' => 'API Settings',
+    'description' => 'Configure Eventbrite API settings',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -1,
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'title' => 'API Settings',
+  );
+  
+  $items['admin/settings/eventbrite/organizers'] = array(
+    'title' => 'Organizers',
+    'description' => 'List Eventbrite organizers',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_organizer_list_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.organizer.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  
+  $items['admin/settings/eventbrite/organizers/list'] = array(
+    'title' => 'List Organizers',
+    'description' => 'List Eventbrite organizers',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  
+  $items['admin/settings/eventbrite/organizers/add'] = array(
+    'title' => 'Add an Organizer',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_organizer'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.organizer.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  
+  $items['admin/settings/eventbrite/organizers/%'] = array(
+    'title' => 'Edit this Organizer',
+    'description' => 'Edit an Eventbrite organizer',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_organizer', 4),
+    'access callback' => 'is_numeric',
+    'access arguments' => array(4),
+    'file' => 'eventbrite.organizer.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+  
+  // VENUES  
+
+  $items['admin/settings/eventbrite/venues'] = array(
+    'title' => 'Venues',
+    'description' => 'List Eventbrite venues',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue_list_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.venue.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  
+  $items['admin/settings/eventbrite/venues/list'] = array(
+    'title' => 'List Venues',
+    'description' => 'List Eventbrite venues',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  
+  $items['admin/settings/eventbrite/venues/add'] = array(
+    'title' => 'Add a Venue',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.venue.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  
+  $items['admin/settings/eventbrite/venues/%'] = array(
+    'title' => 'Edit this Venue',
+    'description' => 'Edit an Eventbrite venue',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue', 4),
+    'access callback' => 'is_numeric',
+    'access arguments' => array(4),
+    'file' => 'eventbrite.venue.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+
+  $items['admin/settings/eventbrite/payment-settings'] = array(
+    'title' => 'Payment Settings',
+    'description' => 'Configure default payment settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_payment_default_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite.payment.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+  
+  return $items;
+}
+
+/**
+ * Implementation of the hook_permissions()
+ */
+function eventbrite_perm() {
+  return array('administer eventbrite settings', 'administer eventbrite venues');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function eventbrite_theme() {
+  return array(
+    'eventbrite_venue_list_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'eventbrite.venue.inc',
+    ),
+    'eventbrite_organizer_list_form' => array(
+      'arguments' => array('form' => NULL),
+      'file' => 'eventbrite.organizer.inc',
+    ),
+  );
+}
+
+/* API FUNCTIONS EXPOSED TO OTHER MODULES
+/*
+ * Allows a get-oriented operation to called via the Eventbrite API
+ */
+function eventbrite_get($op, $id = NULL) {
+  module_load_include('inc', 'eventbrite', 'eventbrite.api');
+  switch ($op) {
+    case 'user_list_events':
+      return _eventbrite_api_get_events();
+    case 'user_list_venues':
+      return _eventbrite_api_get_venues();
+    case 'user_list_organizers':
+      return _eventbrite_api_get_organizers();
+    case 'event_get':
+      if ($id) {
+        return _eventbrite_api_get_event($id);
+      }
+      break;
+    case 'user_get':
+      // This will ge the master user
+      return _eventbrite_api_get_user();
+    case 'user_get_by_email':
+      if ($id) {
+        return _eventbrite_api_get_user($id, 'email');
+      }
+    case 'user_get_by_id':
+      if ($id) {
+        return _eventbrite_api_get_user($id, 'user_id');
+      }
+      break;
+    case 'user_get_by_key':
+      if ($id) {
+        return _eventbrite_api_get_user($id, 'user_key');
+      }
+      break;
+  }
+}
+
+/*
+ * Allows a save-oriented operation to called via the Eventbrite API
+ */
+function eventbrite_save($op, $object) {
+  module_load_include('inc', 'eventbrite', 'eventbrite.api');
+  switch ($op) {
+    case 'event_new':
+      return _eventbrite_api_event_new($object);
+    case 'event_update':
+      return _eventbrite_api_event_update($object);
+    case 'organizer_new':
+      return _eventbrite_api_organizer_new($object);
+    case 'organizer_update':
+      return _eventbrite_api_organizer_update($object);
+    case 'payment_update':
+      return _eventbrite_api_payment_update($object);
+    case 'ticket_new':
+      return _eventbrite_api_ticket_new($object);
+    case 'ticket_update':
+      return _eventbrite_api_ticket_update($object);
+    case 'user_new':
+      return _eventbrite_api_user_new($object);
+    case 'venue_new':
+      return _eventbrite_api_venue_new($object);
+    case 'venue_update':
+      return _eventbrite_api_venue_update($object);
+  }
+}
+
+/*
+ * DEPRECATED
+ * 
+ * This is a utility function to manage any errors generated over the page request 
+ * 
+ * TODO: Remove this DEPRECATED function as it is not needed and calls to it are in the process of removal
+ *
+ * param 1: $error_msg: a error message string.  '' when this function is being called to get the errors
+ * param 2: $error_type: An Eventbrite supplied value used to associate the error with a form element
+ */
+function eventbrite_errors($error_msg = '', $error_type = '') {
+  static $errors;
+  if (!isset($errors)) {
+    $errors = array();
+  }
+  if ($error_msg) {
+    if ($error_type) {
+      $errors[$error_type] = $error_msg;
+    }
+    else {
+      $errors[] = $error_msg;
+    }
+  }
+  return $errors;
+}
+
+/*
+ * This function translates offset into the formatting that Eventbrite API is expecting
+ */
+function eventbrite_timezone_offset($offset) {
+  $eb_timezone = 'GMT';
+  $eb_timezone .= ($offset < 0) ? '-' : '+';
+  $eb_timezone .= (abs($offset) >= 10) ? abs($offset) : '0'. abs($offset);
+
+  return $eb_timezone;
+}
+
+/**
+ * Returns Eventbrite's API user_list_events as a keyed array suitable
+ * for option lists.
+ *
+ * @param mixed $id
+ *   The event id for an event that must not be filtered.
+ * @param boolean $allow_historical
+ *   Whether or not events that start prior to the current time should
+ *   be returned.
+ * @return array
+ *   An array of events keyed by event id and containing event titles.
+ */
+function eventbrite_get_events_options($id = null, $allow_historical = false) {
+  $options = array();
+  if ($events = eventbrite_get('user_list_events')) {
+    $options[0] = '';
+    foreach ($events as $event_id => $event) {
+      if (($id == $event_id) || $allow_historical) {
+        $options[$event_id] = $event->title;
+      } else {
+        $start_date_ts = date_convert($event->start_date, DATE_DATETIME, DATE_UNIX, $event->timezone);
+        if ($start_date_ts > time()) {
+          $options[$event_id] = $event->title;
+        }
+      }
+    }
+  }
+  return $options;
+}
+
+/*
+ * This function returns TRUE if Eventbrite module is set up with valid Eventbrite authentication
+ */
+function eventbrite_is_valid_auth() {
+  return variable_get('eventbrite_is_valid_auth', FALSE);
+}
